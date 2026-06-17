@@ -6,6 +6,7 @@ df["Ship Date"] = pd.to_datetime(df["Ship Date"], dayfirst=True)
 df["Sales"] =pd.to_numeric(df["Sales"])
 df["Postal Code"]=df["Postal Code"].astype(str).str.replace(".0", "" , regex=False)
 
+#Clean data for dataquality and governace
 print(df.dtypes)
 print(df.head(10))
 print("Duplicated rows: ", df.duplicated().sum())
