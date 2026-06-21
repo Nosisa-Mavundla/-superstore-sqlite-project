@@ -1,13 +1,11 @@
 import sqlite3
-import pandas as pd
-df=pd.read_csv("data/superstore.csv")
-
 conn = sqlite3.connect("database/superstore.db")
 cursor = conn.cursor()
 
 print("Connected to SQLITE database successfully.")
 
 #SQL Analysis
+#Descriptive Analysis
 #The Total Sales made by superstore across all regions.
 query = """
 SELECT SUM(Sales) AS Total_Sales
@@ -59,7 +57,6 @@ for Sub_Category, Sales in result:
  print(Sub_Category, Sales)
 
 #Sales by consumer segment
-print(df.columns)
 query = """
 SELECT Segment, SUM(Sales) AS Total_Sales
 FROM superstore
@@ -85,6 +82,21 @@ cursor.execute(query)
 result = cursor.fetchall()
 for Product_Name, Sales in result:
  print(Product_Name, Sales)
+
+#Sales by Country
+query = """
+SELECT Country, SUM(Sales) AS Total_Sales
+FROM superstore
+GROUP BY Country
+ORDER BY Sales DESC
+LIMIT 20
+"""
+
+cursor.execute(query)
+result = cursor.fetchall()
+for Country, Sales in result:
+ print(Country, Sales)
+ 
 
 #Sales by State
 query= """
@@ -159,3 +171,78 @@ cursor.execute(query)
 result= cursor.fetchall()
 for date in result:
  print(date)
+
+
+ #Diagnostic/Explanatory Analysis
+ #hyp Test1: Regions with higher sales generate more sales partly because they receive more customer orders.
+query = """
+SELECT Region, COUNT(DISTINCT "Order ID") AS Total_Orders
+FROM superstore
+GROUP BY Region
+ORDER BY Total_Orders DESC
+"""
+cursor.execute(query)
+result= cursor.fetchall()
+for Region, Total_Orders in result:
+ print(Region, Total_Orders)
+
+#hyp Test1.1: Regions with higher sales generate more sales partly because customers spend more money per order./Higher Average Order Value
+
+
+#regions with higher sales are influenced by the sales contribution by the product categories.
+query = """
+SELECT Region, Category, SUM(Sales) AS Total_Sales
+FROM superstore
+GROUP BY Region, Category
+ORDER BY Region,  Sales DESC
+"""
+
+cursor.execute(query)
+result= cursor.fetchall()
+for Region, Category, Sales in result:
+ print(Region, Category, Sales)
+
+#The west and east have stronger category performance:why?
+query = """
+SELECT Region, Segment, SUM(Sales) AS Total_Sales
+FROM superstore
+GROUP BY Region, Segment
+ORDER BY Region,  Sales DESC
+"""
+cursor.execute(query)
+result= cursor.fetchall()
+for Region, Segment, Sales in result:
+ print(Region, Segment, Sales)
+
+#Sales by Region and City
+#We are now testing whether their success is concentrated in a few cities or spread across many cities.
+#West and east has several strong cities or just one dominant city.
+
+query = """
+SELECT City, SUM(Sales) AS Total_Sales
+FROM superstore
+WHERE Region = "West"
+GROUP BY City
+ORDER BY Total_Sales DESC
+LIMIT 10
+"""
+cursor.execute(query)
+result= cursor.fetchall()
+for City, Sales in result:
+ print( City, Sales)
+
+
+query = """
+SELECT City, SUM(Sales) AS Total_Sales
+FROM superstore
+WHERE Region = "East"
+GROUP BY City
+ORDER BY Total_Sales DESC
+LIMIT 10
+"""
+cursor.execute(query)
+result= cursor.fetchall()
+for City, Sales in result:
+ print( City, Sales)
+
+
