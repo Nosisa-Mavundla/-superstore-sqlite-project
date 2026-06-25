@@ -29,9 +29,9 @@ Technology was the highest-performing category, with strong contributions from s
 Customer segment: finding
 The Consumer segment generated the highest overall sales, indicating that individual customers represent the largest source of company revenue.</p>
 <h2>Sales trend analysis</h2>
-<h2>Yearly performance: finding</h2>
+<h3>Yearly performance: finding</h3>
 <p>Sales increased consistently from 2015 to 2018, indicating positive business growth.</p>
-<h2>Monthly performance: finding</h2>
+<h3>Monthly performance: finding</h3>
 
 <p>A clear seasonal pattern was identified:</p>
 <ul>
