@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 df = pd.read_csv("data/superstore.csv")
 #page config
@@ -208,19 +209,109 @@ fig6.update_traces(
     hovertemplate="Month: %{x}<br>Sales:$ %{y:,.2f}<extra></extra>"
 )
 
+#Each region with its total unique orders
+query = """
+SELECT Region, COUNT(DISTINCT "Order ID") AS Total_Orders
+FROM superstore
+GROUP BY Region
+ORDER BY Total_Orders DESC
+"""
+
+df_Orders = pd.read_sql_query(query, conn)
+
+fig7= px.bar(
+    df_Orders,
+    x ="Region",
+    y= "Total_Orders",
+    title= "Orders by Region"
+)
+fig7.update_traces(
+    hovertemplate="Orders:%{y:}<br>Region: %{x}<extra></extra>"
+)
+
+#Sales by categories in each region
+query = """
+SELECT Region, Category,SUM(Sales) AS Total_Sales
+FROM superstore
+GROUP BY Region, Category
+ORDER BY Region, Total_Sales
+"""
+
+df_reg_cat = pd.read_sql_query(query, conn)
+
+fig8 = px.bar(
+    df_reg_cat,
+    x= "Region",
+    y="Total_Sales",
+    color= "Category",
+    barmode= "group",
+    title="Region Sales by each product mix"
+)
+fig8.update_traces(
+     hovertemplate="Total_Sales:$%{y:,.2f}<br>Region: %{x}<extra></extra>"
+)
+
+
 #container for line charts
 c_container = st.container()
 with c_container:
-    col1, col2 = st.columns(2)
+    col1, col2, col3 , col4= st.columns(4)
 
     col1.plotly_chart(fig5, use_container_width=True)
     col2.plotly_chart(fig6,use_container_width=True)
+    col3.plotly_chart(fig7, use_container_width=True)
+    col4.plotly_chart(fig8, use_container_width=True)
 
+#Average Order Value: customers spending per order
+query = """
+SELECT Region,
+       (SUM(Sales)/COUNT(DISTINCT "Order ID")) AS AOV
+FROM superstore
+GROUP BY Region
+ORDER BY AOV
+"""
 
+df_aov = pd.read_sql_query(query, conn)
+df_aov = df_aov.sort_values("AOV")
 
+fig9 = go.Figure()
 
+# STEMS (from baseline 0 to value)
+df_aov = pd.read_sql_query(query, conn)
+df_aov = df_aov.sort_values("AOV")
 
+fig9 = go.Figure()
 
+# ✔ STEMS (baseline 0 → value)
+for _, row in df_aov.iterrows():
+    fig9.add_trace(
+        go.Scatter(
+            x=[row["Region"], row["Region"]],
+            y=[0, row["AOV"]],
+            mode="lines",
+            line=dict(color="lightgray", width=2),
+            showlegend=False
+        )
+    )
+
+# ✔ HEADS (lollipops)
+fig9.add_trace(
+    go.Scatter(
+        x=df_aov["Region"],
+        y=df_aov["AOV"],
+        mode="markers",
+        marker=dict(size=12, color="steelblue"),
+        hovertemplate="AOV: %{y:,.2f}<br>Region: %{x}<extra></extra>"
+    )
+)
+
+fig9.update_layout(
+    title="Average Order Value by Region",
+    xaxis_title="Region",
+    yaxis_title="AOV"
+)
+
+st.plotly_chart(fig9)
 
 
 
