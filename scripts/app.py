@@ -222,9 +222,6 @@ fig8.update_traces(
    textinfo= "label+percent root"
 )
 
-
-
-
 #Top 10 high performing cities
 query = """
 SELECT City, SUM(Sales) AS Total_Sales
@@ -248,7 +245,91 @@ fig9.update_layout(
 fig9.update_traces(
     hovertemplate="City: %{y}<br>Sales:$ %{x:,.2f}<extra></extra>"
 )
+#Regional Order Volume/ total orders by region
 
+query = """
+SELECT Region, COUNT(DISTINCT "Order ID") AS Total_Orders
+FROM superstore
+GROUP BY Region
+ORDER BY Total_Orders DESC
+"""
+
+df_rov = pd.read_sql_query(query, conn)
+fig10 = px.bar(
+   df_rov,
+   x= "Total_Orders",
+   y="Region",
+   orientation="h",
+   title="Total Orders by Region"
+)
+fig10.update_layout(
+   yaxis={"categoryorder": "total ascending"}
+)
+
+#Product category performance/is south's underperformance driven by product category's low performance, is underperfomance driven by  single category or all categories.
+query = """
+SELECT Region, Category, SUM(Sales)AS Total_Sales
+FROM superstore
+GROUP BY Region, Category
+ORDER BY Region, Total_Sales DESC
+"""
+df_rpcp=pd.read_sql_query(query, conn)
+
+fig11 = px.bar(
+   df_rpcp,
+   x="Region",
+   y="Total_Sales",
+   color= "Category",
+   barmode="group",
+   title="Category Performance by Region"
+)
+
+fig11.update_traces(
+     hovertemplate="Total_Sales:$%{y:,.2f}<br>Region: %{x}<extra></extra>"
+)
+
+#AOV/Average order value by region
+query ="""
+SELECT Region, SUM(Sales)/COUNT(DISTINCT "Order ID") AS AOV
+FROM superstore
+GROUP BY Region
+ORDER BY AOV DESC
+"""
+
+ #STEMS (from baseline 0 to value)
+df_aov = pd.read_sql_query(query, conn)
+df_aov = df_aov.sort_values("AOV")
+
+fig12 = go.Figure()
+
+# ✔ STEMS (baseline 0 → value)
+for _, row in df_aov.iterrows():
+    fig12.add_trace(
+        go.Scatter(
+            x=[row["Region"], row["Region"]],
+            y=[0, row["AOV"]],
+            mode="lines",
+            line=dict(color="lightgray", width=2),
+            showlegend=False
+        )
+    )
+
+# ✔ HEADS (lollipops)
+fig12.add_trace(
+    go.Scatter(
+        x=df_aov["Region"],
+        y=df_aov["AOV"],
+        mode="markers",
+        marker=dict(size=12, color="steelblue"),
+        hovertemplate="AOV: %{y:,.2f}<br>Region: %{x}<extra></extra>"
+    )
+)
+
+fig12.update_layout(
+    title="Average Order Value by Region",
+    xaxis_title="Region",
+    yaxis_title="AOV"
+)
 
 
 if page == "Executive Summary":
@@ -307,9 +388,60 @@ elif page == "Business Performance":
        col1.plotly_chart(fig8, use_container_width=True)
        col2.plotly_chart(fig9, use_container_width=True)
 
+elif page == "Diagnostic Analysis":
+   st.title("Diagnostic Analysis") 
+   st.markdown("### Why is the South Region Underperforming")
 
-       #sales by segment
-       #top 10 performing cities
+   st.markdown("""
+               <p style = "font-size:18px;">
+               This section investigates whether lower sales in the South are driven by order volume, customer spending behaviour, or product category performance
+               </p>
+               """, unsafe_allow_html=True)
+   
+   st.markdown("""
+               <h2 style= "font-size:20px;">
+               Evidence 1:Regional Order Volume
+               </h2>
+               """, unsafe_allow_html=True)
+
+   st.plotly_chart(fig10)
+   st.markdown("""
+<p style="font-size:18px;">
+South recorded the lowest number of orders among all regions, indicating that lower customer activity is a major contributor to its weaker sales performance.
+
+</p>
+""", unsafe_allow_html=True)
+    
+   st.markdown("""
+               <h2 style="font-size:20px;">
+               Evidence 2: Category Performance
+               </h2>
+               """, unsafe_allow_html=True)
+   st.plotly_chart(fig11)
+
+   st.markdown("""
+              <p style="font-size:18px;"> 
+               Every product category generated the lowest sales in the South, indicating that the underperformance is widespread rather than concentrated in a single category.
+               </p>
+               """,unsafe_allow_html=True)
+   
+
+   st.markdown("""
+               <h2 style="font-size:20px;">
+               Evidence 3: Average Order Value
+               </h2>
+               """, unsafe_allow_html=True)
+   st.plotly_chart(fig12)
+   st.markdown("""
+               <p style= "font-size:18px;">
+               Although South underperforms in total sales, its Average Order Value exceeds
+               that of West and Central. This suggests that order value is not the primary
+               driver of South's weaker sales performance.
+              </p>
+               """, unsafe_allow_html=True )
+
+
+
 
 
 
